@@ -1,0 +1,2472 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>XP-PEN 商品管理虚拟商品改造原型</title>
+  <style>
+    :root {
+      --top: #5a95bd;
+      --top-active: #3f749d;
+      --nav-blue: #2f6fb4;
+      --line: #d8dde3;
+      --soft-line: #edf0f3;
+      --text: #333;
+      --muted: #777;
+      --bg: #f4f6f8;
+      --cell: #fafafa;
+      --green: #8fbc7e;
+      --green-dark: #74a35f;
+      --red: #c8644e;
+      --blue: #4d82bd;
+      --orange: #d57b3a;
+      --focus: #eaf4ff;
+      --doc: #fffdf7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      font-size: 14px;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    .workspace {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(980px, 1fr);
+      background: #fff;
+    }
+
+    .prototype-pane {
+      min-width: 0;
+      overflow: auto;
+      background: #fff;
+    }
+
+    .prd-pane {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      background: #fbfcfe;
+      padding: 16px;
+    }
+
+    .connector-layer {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .connector {
+      stroke: #72a8cf;
+      stroke-width: 1.4;
+      stroke-dasharray: 4 4;
+      opacity: .38;
+      fill: none;
+    }
+
+    .connector.active {
+      stroke: #2f6fb4;
+      stroke-width: 2;
+      opacity: .95;
+      stroke-dasharray: 0;
+    }
+
+    .topbar {
+      height: 60px;
+      background: var(--top);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      min-width: 1220px;
+    }
+
+    .brand {
+      width: 150px;
+      padding-left: 28px;
+      font-size: 28px;
+      letter-spacing: 0;
+      line-height: 60px;
+      font-weight: 500;
+    }
+
+    .top-menu {
+      display: flex;
+      height: 60px;
+      flex: 1;
+    }
+
+    .top-item {
+      height: 60px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      border-left: 1px solid rgba(255,255,255,.08);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .top-item.active { background: var(--top-active); }
+    .top-icon { font-size: 20px; line-height: 1; }
+
+    .userbar {
+      margin-left: auto;
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+
+    .userbar span, .userbar a {
+      color: #fff;
+      text-decoration: none;
+      border-left: 1px solid rgba(255,255,255,.18);
+      padding: 0 15px;
+      height: 60px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 255px minmax(965px, 1fr);
+      min-width: 1220px;
+    }
+
+    .sidebar {
+      background: #f7f7f7;
+      border-right: 1px solid #d1d7de;
+      min-height: calc(100vh - 60px);
+    }
+
+    .side-section {
+      border-bottom: 1px solid #ddd;
+      background: #fff;
+    }
+
+    .side-title {
+      height: 54px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      font-size: 17px;
+      font-weight: 700;
+      color: #2f6fb4;
+      background: #fafafa;
+    }
+
+    .side-title.gray {
+      color: #444;
+      font-weight: 500;
+    }
+
+    .side-title .arrow { margin-left: auto; color: #2f6fb4; }
+
+    .side-list {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 0 22px;
+      border-left: 1px dotted #9fc2e2;
+    }
+
+    .side-list li {
+      min-height: 49px;
+      display: flex;
+      align-items: center;
+      padding-left: 27px;
+      color: #555;
+      font-size: 16px;
+      border-bottom: 1px dotted #ddd;
+      position: relative;
+      white-space: nowrap;
+    }
+
+    .side-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 12px;
+      height: 1px;
+      border-top: 1px dotted #9fc2e2;
+    }
+
+    .side-list li.active {
+      color: #2f6fb4;
+      background: #f5f8fd;
+      font-weight: 700;
+    }
+
+    .side-list li.active::after {
+      content: "";
+      position: absolute;
+      right: -1px;
+      top: 0;
+      border-top: 24px solid transparent;
+      border-bottom: 24px solid transparent;
+      border-right: 12px solid #4e87bd;
+    }
+
+    .main {
+      background: #fff;
+      min-height: calc(100vh - 60px);
+      padding-bottom: 32px;
+    }
+
+    .module-panel { display: none; }
+    .module-panel.active { display: block; }
+    aside.module-panel.active { display: block; }
+    section.module-panel.active { display: block; }
+
+    .crumbs {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 22px;
+      border-bottom: 1px solid #ddd;
+      color: #6b8eaa;
+      font-size: 16px;
+      background: #f8f8f8;
+    }
+
+    .lang {
+      margin-left: auto;
+      background: #4d82bd;
+      color: #fff;
+      padding: 5px 12px;
+      font-weight: 700;
+    }
+
+    .screen {
+      display: none;
+      padding: 14px 22px 0;
+    }
+
+    .screen.active { display: block; }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 230px 230px 190px 150px 140px 130px 136px 136px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .order-filters {
+      display: grid;
+      grid-template-columns: 240px 240px 96px 136px 136px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .order-list-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .order-list-filters .control { width: 150px; }
+
+    .order-list-filters.compact-second {
+      margin-top: -6px;
+    }
+
+    .order-list-filters.compact-second .control { width: 180px; }
+
+    .order-table table { min-width: 1720px; }
+    .order-no {
+      color: #337ab7;
+      text-decoration: none;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .order-goods {
+      display: grid;
+      gap: 8px;
+      line-height: 1.45;
+    }
+
+    .order-goods strong {
+      color: #337ab7;
+      font-weight: 500;
+    }
+
+    .status-label {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      padding: 0 7px;
+      background: #eef6ea;
+      color: #5a8d43;
+      border: 1px solid #c9dfbd;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .status-label.warn {
+      background: #fff8e8;
+      color: #b07022;
+      border-color: #ead0a1;
+    }
+
+    .status-label.gray {
+      background: #f1f3f5;
+      color: #777;
+      border-color: #d8dde3;
+    }
+
+    .state-green { color: #2f7c35; font-weight: 700; }
+    .state-red { color: #a12a22; font-weight: 700; }
+    .ace-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .ace-mini-btn {
+      min-height: 26px;
+      min-width: 28px;
+      border-radius: 3px;
+      color: #fff;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 7px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .ace-mini-btn.green { background: #87b87f; }
+    .ace-mini-btn.red { background: #d15b47; }
+    .ace-mini-btn.blue { background: #6fb3e0; }
+
+    .order-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .summary-card {
+      border: 1px solid #d8dde3;
+      background: linear-gradient(#fff, #f7f7f7);
+      min-height: 74px;
+      padding: 12px;
+    }
+
+    .summary-card strong {
+      display: block;
+      color: #2f6fb4;
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .detail-layout {
+      display: block;
+    }
+
+    .info-block {
+      border: 1px solid #d8dde3;
+      margin-bottom: 14px;
+      background: #fff;
+    }
+
+    .info-title {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      background: #fff;
+      border-bottom: 1px solid #d8dde3;
+      color: #222;
+      font-weight: 700;
+    }
+
+    .info-body {
+      padding: 12px;
+      line-height: 1.75;
+      overflow: auto;
+    }
+
+    .detail-layout .mini-table { min-width: 1600px; }
+
+    .detail-layout .order-product-table { min-width: 1880px; }
+    .order-product-table th,
+    .order-product-table td {
+      font-size: 14px;
+      vertical-align: middle;
+    }
+    .order-product-table th {
+      white-space: normal;
+      line-height: 1.35;
+    }
+    .order-product-cell {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      gap: 14px;
+      align-items: center;
+      min-width: 330px;
+    }
+    .order-product-cell.indent { padding-left: 64px; }
+    .order-product-cell img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      display: block;
+      background: #fff;
+    }
+    .order-product-title {
+      color: #337ab7;
+      text-decoration: none;
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+    .order-product-spec {
+      margin-top: 6px;
+      color: #999;
+      line-height: 1.4;
+    }
+    .amount-red { color: #f00; font-weight: 700; }
+    .refund-btn {
+      min-width: 92px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #c86552;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 0 12px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 140px 1fr 140px 1fr;
+      border-top: 1px solid #e1e5e9;
+      border-left: 1px solid #e1e5e9;
+    }
+
+    .info-grid div {
+      min-height: 42px;
+      padding: 10px;
+      border-right: 1px solid #e1e5e9;
+      border-bottom: 1px solid #e1e5e9;
+    }
+
+    .info-grid .key {
+      background: #fafafa;
+      font-weight: 700;
+    }
+
+    .timeline {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      line-height: 1.65;
+    }
+
+    .timeline li {
+      border-bottom: 1px dotted #d8dde3;
+      padding: 8px 0;
+    }
+
+    .project-table table { min-width: 1260px; }
+    .project-table .project-products {
+      color: #337ab7;
+      line-height: 1.55;
+    }
+
+    .code-manage-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .code-manage-filters .control { width: 180px; }
+    .code-manage-filters .control.short { width: 112px; }
+    .code-table table { min-width: 1420px; }
+    .code-table td { height: 58px; }
+    .code-table th { height: 58px; }
+    .date-input {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .date-input::after {
+      content: "▣";
+      position: absolute;
+      right: 10px;
+      color: #8ab7dd;
+      font-size: 18px;
+      pointer-events: none;
+    }
+
+    .order-form {
+      border: 1px solid #dedede;
+      border-bottom: 0;
+    }
+
+    .order-row {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      min-height: 80px;
+      border-bottom: 1px solid #dedede;
+    }
+
+    .order-label {
+      background: #fafafa;
+      border-right: 1px solid #dedede;
+      padding: 22px 14px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .order-field {
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .order-field .control { width: 100%; }
+
+    .order-editor {
+      border: 1px solid #d4d9de;
+      background: #fff;
+    }
+
+    .order-editor-toolbar {
+      min-height: 110px;
+      border-bottom: 1px solid #d4d9de;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-content: flex-start;
+      background: linear-gradient(#fff, #f6f6f6);
+    }
+
+    .tool-chip {
+      height: 28px;
+      min-width: 28px;
+      border: 1px solid #cbd2d8;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #444;
+      background: #fff;
+      padding: 0 8px;
+    }
+
+    .order-editor-area {
+      min-height: 420px;
+      background: #fff;
+    }
+
+    .order-editor-foot {
+      border-top: 1px solid #d4d9de;
+      min-height: 32px;
+      padding: 8px;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .control {
+      height: 48px;
+      border: 1px solid #d3d7db;
+      border-radius: 4px;
+      background: #fff;
+      padding: 0 11px;
+      color: #666;
+      min-width: 0;
+    }
+
+    .control::placeholder { color: #aaa; }
+
+    .btn {
+      height: 48px;
+      border: 0;
+      color: #fff;
+      padding: 0 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+      border-radius: 0;
+    }
+
+    .btn.blue { background: var(--blue); }
+    .btn.green { background: var(--green); }
+    .btn.red { background: var(--red); }
+    .btn.gray { background: #8a929b; }
+    .btn.small { height: 34px; padding: 0 10px; }
+
+    .table-wrap {
+      border: 1px solid #d6d6d6;
+      overflow: auto;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1180px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th {
+      height: 73px;
+      background: linear-gradient(#f6f6f6, #ebebeb);
+      color: #626262;
+      font-size: 16px;
+      text-align: left;
+      border-right: 1px solid #d9d9d9;
+      border-bottom: 1px solid #d0d0d0;
+      padding: 0 10px;
+      font-weight: 700;
+    }
+
+    td {
+      height: 86px;
+      border-right: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      padding: 10px;
+      color: #3f3f3f;
+      vertical-align: middle;
+      background: #fff;
+    }
+
+    tbody tr:nth-child(2n) td { background: #fcfcfc; }
+    .checkcell { width: 46px; text-align: center; }
+    .idcell { width: 54px; }
+    .namecell { width: 270px; }
+    .typecell { width: 122px; }
+    .skucell { width: 156px; }
+    .pricecell { width: 86px; }
+    .stockcell { width: 76px; }
+    .flagcell { width: 58px; text-align: center; }
+    .searchcell { width: 98px; }
+    .actioncell { width: 204px; }
+
+    .fake-check {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #d1d1d1;
+      background: #fafafa;
+    }
+
+    .picker-row { cursor: pointer; }
+    .picker-row.selected td {
+      background: #dcecff !important;
+      outline: 1px solid #2f80ed;
+      outline-offset: -1px;
+    }
+    .picker-row.selected .fake-check {
+      border-color: #2f80ed;
+      background: #2f80ed;
+      position: relative;
+    }
+    .picker-row.selected .fake-check::after {
+      content: "✓";
+      color: #fff;
+      position: absolute;
+      left: 4px;
+      top: -3px;
+      font-weight: 700;
+    }
+
+    .product-link {
+      color: #337ab7;
+      text-decoration: none;
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    .tag {
+      color: #d05d3f;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 8px;
+      border-radius: 2px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: #7aaed4;
+      margin-top: 5px;
+    }
+
+    .pill.orange { background: #d88a47; }
+    .pill.green { background: #78aa68; }
+    .tick {
+      color: #6fa755;
+      font-size: 26px;
+      font-weight: 900;
+    }
+
+    .cross {
+      color: #c8644e;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .dash {
+      color: #bbb;
+      font-size: 21px;
+      font-weight: 700;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(4, 38px);
+      grid-auto-rows: 34px;
+      gap: 0;
+    }
+
+    .icon-btn {
+      border: 1px solid rgba(255,255,255,.38);
+      color: #fff;
+      background: var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 17px;
+    }
+
+    .icon-btn.red { background: var(--red); }
+    .icon-btn.blue { background: #78a9ca; }
+
+    .form-tabs {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(112px, 1fr));
+      padding: 12px 22px 0;
+    }
+
+    .form-tab {
+      height: 54px;
+      border: 1px solid #cbd5df;
+      border-left: 0;
+      background: #f7f7f7;
+      color: #898989;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .form-tab:first-child { border-left: 1px solid #cbd5df; }
+    .form-tab.active {
+      background: #fff;
+      color: #333;
+      border-top: 4px solid var(--blue);
+      border-bottom-color: #fff;
+    }
+
+    .create-shell {
+      margin: 0 22px;
+      border: 1px solid #cbd5df;
+      padding: 22px 16px 30px;
+      min-height: 710px;
+    }
+
+    .steps {
+      display: flex;
+      align-items: center;
+      margin-bottom: 22px;
+      border: 1px solid #d9dde2;
+      background: #fbfbfb;
+    }
+
+    .step {
+      flex: 1;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #777;
+      font-weight: 700;
+      border-right: 1px solid #d9dde2;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .step:last-child { border-right: 0; }
+    .step.active { color: #fff; background: #5c96c2; }
+    .step.done { color: #5b8d47; background: #f7fbf5; }
+    .step-num {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #d7dce2;
+      color: #555;
+      font-size: 13px;
+    }
+    .step.active .step-num { background: #fff; color: #3f749d; }
+    .step.done .step-num { background: #79aa63; color: #fff; }
+
+    .form-grid {
+      border: 1px solid #dedede;
+      border-bottom: 0;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      min-height: 62px;
+      border-bottom: 1px solid #dedede;
+    }
+
+    .label {
+      background: #fafafa;
+      border-right: 1px solid #dedede;
+      padding: 18px 14px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .field {
+      padding: 11px 14px;
+      min-width: 0;
+    }
+
+    .field .control {
+      width: 100%;
+      height: 46px;
+    }
+
+    .hint {
+      margin-top: 8px;
+      color: #777;
+      line-height: 1.45;
+    }
+
+    .inline {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .radio-card {
+      min-width: 188px;
+      border: 1px solid #cfd7df;
+      padding: 13px 14px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .radio-card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .radio-card.active {
+      border-color: var(--blue);
+      background: var(--focus);
+      box-shadow: inset 4px 0 0 var(--blue);
+    }
+
+    .two-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .mini-table {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid #d8dde3;
+      table-layout: fixed;
+    }
+
+    .mini-table th {
+      height: 42px;
+      font-size: 14px;
+      padding: 0 8px;
+    }
+
+    .mini-table td {
+      height: 48px;
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    .primary-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .notice {
+      margin-bottom: 14px;
+      background: #fff8eb;
+      border: 1px solid #f1d3a8;
+      padding: 12px 14px;
+      color: #8a5b1f;
+      line-height: 1.5;
+    }
+
+    .config-reference {
+      margin-bottom: 16px;
+      border: 1px solid #d6dce3;
+      background: #fcfcfc;
+    }
+
+    .config-reference-title {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font-weight: 700;
+      color: #4f6f88;
+      border-bottom: 1px solid #d6dce3;
+      background: linear-gradient(#f8f8f8, #eeeeee);
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .config-item {
+      min-height: 92px;
+      border: 1px solid #dde2e7;
+      background: #fff;
+      padding: 10px 12px;
+      line-height: 1.55;
+    }
+
+    .config-item strong {
+      display: block;
+      color: #2f6fb4;
+      margin-bottom: 5px;
+    }
+
+    .tab-workspace {
+      border: 1px solid #d6dce3;
+      margin-bottom: 16px;
+      background: #fff;
+    }
+
+    .tab-panel {
+      display: none;
+      padding: 14px;
+    }
+
+    .tab-panel.active { display: block; }
+
+    .tab-panel-title {
+      margin: 0 0 10px;
+      color: #2f6fb4;
+      font-size: 16px;
+    }
+
+    .compact-form {
+      border: 1px solid #dedede;
+      border-bottom: 0;
+    }
+
+    .compact-row {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      min-height: 48px;
+      border-bottom: 1px solid #dedede;
+    }
+
+    .compact-label {
+      padding: 14px 12px;
+      background: #fafafa;
+      border-right: 1px solid #dedede;
+      font-weight: 700;
+    }
+
+    .compact-field {
+      padding: 8px 12px;
+      min-width: 0;
+    }
+
+    .compact-field .control { width: 100%; }
+
+    .inline-note {
+      color: #777;
+      line-height: 1.55;
+      margin-top: 6px;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .media-slot {
+      min-height: 116px;
+      border: 1px dashed #b8c7d4;
+      background: #fbfdff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5b7d99;
+      font-weight: 700;
+    }
+
+    .editor-mock {
+      border: 1px solid #d4d9de;
+      background: #fff;
+    }
+
+    .editor-toolbar {
+      min-height: 54px;
+      border-bottom: 1px solid #d4d9de;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      flex-wrap: wrap;
+    }
+
+    .editor-chip {
+      border: 1px solid #cdd2d7;
+      background: #fff;
+      height: 32px;
+      min-width: 88px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #333;
+    }
+
+    .editor-area {
+      min-height: 170px;
+      padding: 14px;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .editor-foot {
+      height: 34px;
+      border-top: 1px solid #d4d9de;
+      display: grid;
+      grid-template-columns: 1fr 150px;
+      color: #555;
+      align-items: center;
+      padding: 0 10px;
+      font-weight: 700;
+    }
+
+    .doc-title {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: #2f5f84;
+    }
+
+    .doc-card {
+      background: #fff;
+      border: 1px solid #d9e1ea;
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 3px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.03);
+      transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+
+    .doc-card.linked-active,
+    [data-node].linked-active {
+      outline: 2px solid #4d82bd;
+      outline-offset: 2px;
+      background-color: #f0f7ff;
+    }
+
+    .doc-card.linked-active {
+      border-color: #4d82bd;
+      box-shadow: 0 4px 12px rgba(77,130,189,.16);
+    }
+
+    .doc-card h3 {
+      margin: 0 0 7px;
+      font-size: 15px;
+      color: #2f6fb4;
+    }
+
+    .doc-card p {
+      margin: 0 0 7px;
+      line-height: 1.55;
+      color: #444;
+    }
+
+    .doc-card ul {
+      margin: 7px 0 0;
+      padding-left: 18px;
+      line-height: 1.6;
+    }
+
+    .doc-meta {
+      color: #888;
+      font-size: 12px;
+      margin-bottom: 7px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      padding: 0 7px;
+      color: #fff;
+      background: #6c9fc7;
+      border-radius: 2px;
+      font-size: 12px;
+      margin-right: 4px;
+      white-space: nowrap;
+    }
+
+    .toast {
+      position: fixed;
+      right: 440px;
+      bottom: 24px;
+      z-index: 40;
+      background: rgba(38, 48, 58, .94);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 3px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: .18s;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .modal-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.24);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .modal-mask.show { display: flex; }
+
+    .modal {
+      width: 520px;
+      background: #fff;
+      border: 1px solid #aeb9c5;
+      box-shadow: 0 16px 48px rgba(0,0,0,.25);
+    }
+
+    .modal-head {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      background: #5a95bd;
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .modal-body {
+      padding: 18px 18px 8px;
+      line-height: 1.6;
+    }
+
+    .modal-foot {
+      padding: 12px 18px 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    @media (max-width: 1320px) {
+      .workspace { grid-template-columns: 1fr; }
+      .prd-pane {
+        position: static;
+        height: auto;
+        border-top: 1px solid #cbd5df;
+      }
+      .connector-layer { display: none; }
+      .toast { right: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <section class="prototype-pane" aria-label="商品管理虚拟商品改造原型">
+      <header class="topbar">
+        <div class="brand">XPPEN</div>
+        <nav class="top-menu" data-node="top-nav">
+          <div class="top-item" data-top-module="system"><span class="top-icon">⚙</span>系统设置</div>
+          <div class="top-item" data-top-module="member"><span class="top-icon">●</span>会员管理</div>
+          <div class="top-item" data-top-module="order"><span class="top-icon">▤</span>订单管理</div>
+          <div class="top-item active" data-top-module="product"><span class="top-icon">▤</span>内容管理</div>
+          <div class="top-item" data-top-module="module"><span class="top-icon">▤</span>模块管理</div>
+          <div class="top-item" data-top-module="lottery"><span class="top-icon">▤</span>抽奖服务</div>
+        </nav>
+        <div class="userbar">
+          <span>欢迎您<br>ceshi</span>
+          <a href="#">前台首页</a>
+          <a href="#">退出</a>
+        </div>
+      </header>
+
+      <div class="layout">
+        <aside class="sidebar module-panel active" data-module-panel="product">
+          <div class="side-section">
+            <div class="side-title gray">◉ 控制台</div>
+          </div>
+          <div class="side-section">
+            <div class="side-title">▣ 商品管理 <span class="arrow">⌄</span></div>
+            <ul class="side-list" data-node="module-nav">
+              <li class="active">商品列表管理</li>
+              <li>详情公共模块</li>
+              <li>商品分类管理</li>
+              <li>商品回收站</li>
+              <li>商品模型管理</li>
+              <li>商品评论管理</li>
+              <li>商品咨询分类</li>
+              <li>商品标签管理</li>
+              <li>商品咨询管理</li>
+            </ul>
+          </div>
+          <div class="side-section">
+            <div class="side-title">▣ 文章管理 <span class="arrow">⌄</span></div>
+            <ul class="side-list">
+              <li>文章列表管理</li>
+              <li>文章分类管理</li>
+              <li>专题列表管理</li>
+              <li>公告管理</li>
+            </ul>
+          </div>
+          <div class="side-section">
+            <div class="side-title">▣ 博客管理 <span class="arrow">⌄</span></div>
+            <ul class="side-list">
+              <li>博客列表管理</li>
+              <li>博客分类管理</li>
+            </ul>
+          </div>
+        </aside>
+
+        <section class="main module-panel active" data-module-panel="product">
+          <div class="crumbs">
+            <span>⌂ 首页</span><span>›</span><span>内容管理</span><span>›</span><span>商品管理</span><span>›</span><strong id="crumbText">商品列表管理</strong>
+            <span class="lang">pt葡萄牙语</span>
+          </div>
+
+          <section class="screen active" data-screen="list">
+            <div class="filters" data-node="list-filter">
+              <input class="control" placeholder="商品名称" value="">
+              <input class="control" placeholder="商品SKU名称">
+              <select class="control"><option>请选择分类</option><option>Mesa Digitalizadora</option><option>Tela Digitalizadora</option><option>Acessorios</option><option>Garantia Estendida</option></select>
+              <select class="control"><option>全部商品类型</option><option>普通</option><option>配件</option><option>库存</option><option>二手</option><option>变体子商品</option><option>虚拟商品</option></select>
+              <select class="control"><option>全部状态</option><option>已上架</option><option>待发布</option></select>
+              <select class="control"><option>默认排序</option><option>库存升序</option><option>创建时间</option></select>
+              <button class="btn blue" id="searchBtn">⌕ 查 询</button>
+              <button class="btn green" data-screen-button="create">+ 添加商品</button>
+            </div>
+
+            <div class="table-wrap" data-node="virtual-list">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="checkcell"><span class="fake-check"></span></th>
+                    <th class="idcell">ID</th>
+                    <th class="namecell">商品名称</th>
+                    <th class="typecell">商品类型</th>
+                    <th class="skucell">包含的sku</th>
+                    <th class="pricecell">价格</th>
+                    <th class="stockcell">库存</th>
+                    <th class="flagcell">上架</th>
+                    <th class="flagcell">推荐</th>
+                    <th class="flagcell">热卖</th>
+                    <th class="flagcell">新品</th>
+                    <th class="flagcell">权益/搜索</th>
+                    <th class="flagcell searchcell">是否收录搜索引擎</th>
+                    <th class="flagcell">排序</th>
+                    <th class="actioncell">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="checkcell"><span class="fake-check"></span></td>
+                    <td>161</td>
+                    <td><a class="product-link" href="#">ACS15 Suporte Ergonômico</a><span class="tag">(配件)</span><br><span class="pill green">实体商品</span></td>
+                    <td>配件</td>
+                    <td>ACS15</td>
+                    <td>299.99</td>
+                    <td>1000</td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="dash">-</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell searchcell"><span class="tick">✓</span></td>
+                    <td>0</td>
+                    <td>
+                      <div class="actions">
+                        <button class="icon-btn" title="编辑" data-screen-button="create" data-edit-name="ACS15 Suporte Ergonômico" data-edit-sku="ACS15" data-edit-code="acs15-support" data-edit-price="299.99" data-edit-market="349.99" data-edit-type="accessory" data-edit-category="Accessories">✎</button>
+                        <button class="icon-btn" title="兑换记录">≡</button>
+                        <button class="icon-btn" title="用户咨询">…</button>
+                        <button class="icon-btn red" title="回收站">♻</button>
+                        <button class="icon-btn blue" title="发放预览">◉</button>
+                        <button class="icon-btn" title="库存批次">▦</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="checkcell"><span class="fake-check"></span></td>
+                    <td>160</td>
+                    <td><a class="product-link" href="#">Magic Note Pad</a><span class="tag">(普通)</span><br><span class="pill green">实体商品</span></td>
+                    <td>普通</td>
+                    <td>CDM1101U-BEU</td>
+                    <td>439.99</td>
+                    <td>992</td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="dash">-</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell searchcell"><span class="tick">✓</span></td>
+                    <td>0</td>
+                    <td>
+                      <div class="actions">
+                        <button class="icon-btn" title="编辑" data-screen-button="create" data-edit-name="Magic Note Pad" data-edit-sku="CDM1101U-BEU" data-edit-code="magic-note-pad" data-edit-price="439.99" data-edit-market="499.99" data-edit-type="normal" data-edit-category="Note Pad">✎</button>
+                        <button class="icon-btn" title="兑换记录">≡</button>
+                        <button class="icon-btn" title="用户咨询">…</button>
+                        <button class="icon-btn red" title="回收站">♻</button>
+                        <button class="icon-btn blue" title="发放预览">◉</button>
+                        <button class="icon-btn" title="库存批次">▦</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="checkcell"><span class="fake-check"></span></td>
+                    <td>212</td>
+                    <td><a class="product-link" href="#">Curso de desenho digital - 30 dias</a><span class="tag">(虚拟)</span><br><span class="pill">课程兑换</span></td>
+                    <td>虚拟商品</td>
+                    <td>COURSE-30D-PT</td>
+                    <td>49.99</td>
+                    <td>9999</td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell">30天</td>
+                    <td class="flagcell searchcell"><span class="cross">❌</span></td>
+                    <td>10</td>
+                    <td>
+                      <div class="actions">
+                        <button class="icon-btn" title="编辑" data-screen-button="create" data-edit-name="Curso de desenho digital - 30 dias" data-edit-sku="COURSE-30D-PT" data-edit-code="digital-course-30d" data-edit-price="49.99" data-edit-market="69.99" data-edit-type="virtual" data-edit-category="XP-PEN Academy / Curso online">✎</button>
+                        <button class="icon-btn" title="兑换记录">≡</button>
+                        <button class="icon-btn" title="用户咨询">…</button>
+                        <button class="icon-btn red" title="回收站">♻</button>
+                        <button class="icon-btn blue" title="发放预览">◉</button>
+                        <button class="icon-btn" title="库存批次">▦</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="checkcell"><span class="fake-check"></span></td>
+                    <td>211</td>
+                    <td><a class="product-link" href="#">XP-PEN Plus 延保服务</a><span class="tag">(虚拟)</span><br><span class="pill orange">增值服务</span></td>
+                    <td>虚拟商品</td>
+                    <td>SERVICE-WARRANTY-12M</td>
+                    <td>29.99</td>
+                    <td>无限</td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell"><span class="dash">-</span></td>
+                    <td class="flagcell"><span class="dash">-</span></td>
+                    <td class="flagcell"><span class="tick">✓</span></td>
+                    <td class="flagcell">365天</td>
+                    <td class="flagcell searchcell"><span class="cross">❌</span></td>
+                    <td>20</td>
+                    <td>
+                      <div class="actions">
+                        <button class="icon-btn" title="编辑" data-screen-button="create" data-edit-name="XP-PEN Plus 延保服务" data-edit-sku="SERVICE-WARRANTY-12M" data-edit-code="service-warranty-12m" data-edit-price="29.99" data-edit-market="39.99" data-edit-type="virtual" data-edit-category="XP-PEN Academy / Curso online">✎</button>
+                        <button class="icon-btn" title="兑换记录">≡</button>
+                        <button class="icon-btn" title="用户咨询">…</button>
+                        <button class="icon-btn red" title="回收站">♻</button>
+                        <button class="icon-btn blue" title="发放预览">◉</button>
+                        <button class="icon-btn" title="库存批次">▦</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="create">
+            <div class="form-tabs" data-node="create-tabs">
+              <button class="form-tab active" data-config-tab="info">商品信息</button>
+              <button class="form-tab" data-config-tab="detail">详细描述</button>
+              <button class="form-tab" data-config-tab="other">其它信息</button>
+              <button class="form-tab" data-config-tab="seo">SEO信息</button>
+              <button class="form-tab" data-config-tab="gallery">商品相册</button>
+              <button class="form-tab" data-config-tab="spec">商品规格</button>
+              <button class="form-tab" data-config-tab="param">商品参数</button>
+              <button class="form-tab" data-config-tab="recommend">推荐商品</button>
+              <button class="form-tab" data-config-tab="virtual">虚拟商品</button>
+              <button class="form-tab" data-config-tab="bundle">组合商品</button>
+              <button class="form-tab" data-config-tab="parts">商品配件</button>
+              <button class="form-tab" data-config-tab="service">额外服务</button>
+              <button class="form-tab" data-config-tab="link">联盟链接</button>
+              <button class="form-tab" data-config-tab="faq">FAQ集</button>
+              <button class="form-tab" data-config-tab="media">媒体背书</button>
+              <button class="form-tab" data-config-tab="firework">firework</button>
+            </div>
+            <div class="create-shell">
+              <div class="tab-workspace" data-node="existing-config">
+                <section class="tab-panel active" data-tab-panel="info" data-node="basic-form">
+                  <h3 class="tab-panel-title">商品信息：在原商品信息页签中新增“虚拟商品”类型</h3>
+                  <div class="compact-form">
+                    <div class="compact-row"><div class="compact-label">商品名称:</div><div class="compact-field"><input class="control" data-edit-field="name" value="Curso de desenho digital - 30 dias"><div class="inline-note">沿用现有商品名称字段，前台列表、详情页和订单明细共用。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">商品货号:</div><div class="compact-field"><input class="control" data-edit-field="sku" value="VG-COURSE-30D-PT"><div class="inline-note">不填写时系统自动生成；虚拟商品建议使用 VG / SERVICE / COURSE 前缀。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">商品标识码:</div><div class="compact-field"><input class="control" data-edit-field="code" value="digital-course-30d"><div class="inline-note">用于多站点商品映射，虚拟权益跨站点同步时必须唯一。</div></div></div>
+                    <div class="compact-row" data-node="type-select"><div class="compact-label">商品类型:</div><div class="compact-field"><div class="inline"><label><input type="radio" name="previewType" value="normal"> 普通</label><label><input type="radio" name="previewType" value="accessory"> 配件/库存/二手</label><label><input type="radio" name="previewType" value="virtual" checked> 虚拟商品</label><label><input type="radio" name="previewType" value="variant"> 变体子商品</label></div><div class="inline-note">选择“虚拟商品”后，隐藏物流字段，并展开虚拟分类、权益配置和发放规则。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">商品分类:</div><div class="compact-field"><select class="control" data-edit-field="category"><option>XP-PEN Academy / Curso online</option><option>Accessories</option><option>Note Pad</option><option>Mesa Digitalizadora</option><option>Tela Digitalizadora</option></select></div></div>
+                    <div class="compact-row"><div class="compact-label">扩展分类:</div><div class="compact-field"><button class="btn green small">+ 添加</button><div class="inline-note">沿用原扩展分类能力，用于课程、服务、活动专题等多分类归属。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">虚拟分类:</div><div class="compact-field"><select class="control"><option>课程兑换</option><option>增值服务</option><option>兑换码</option><option>权益包</option></select></div></div>
+                    <div class="compact-row"><div class="compact-label">本店售价:</div><div class="compact-field"><input class="control" data-edit-field="price" value="49.99"></div></div>
+                    <div class="compact-row"><div class="compact-label">市场价:</div><div class="compact-field"><input class="control" data-edit-field="market" value="69.99"></div></div>
+                    <div class="compact-row"><div class="compact-label">商品缩略图:</div><div class="compact-field"><button class="btn blue small">上传图片</button><div class="inline-note">虚拟商品仍保留商品图，用于列表、详情页和订单明细。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">商品切换主图:</div><div class="compact-field"><button class="btn blue small">上传图片</button></div></div>
+                    <div class="compact-row"><div class="compact-label">商品ICON:</div><div class="compact-field"><button class="btn blue small">上传ICON</button></div></div>
+                    <div class="compact-row"><div class="compact-label">FAQ / Q&A:</div><div class="compact-field"><label><input type="checkbox" checked> 开启 FAQ 模块</label> <label><input type="checkbox" checked> 开启 Q&A 模块</label> <label><input type="checkbox"> 折叠商品详情</label></div></div>
+                    <div class="compact-row"><div class="compact-label">税率/积分/标签:</div><div class="compact-field"><div class="two-cols"><select class="control"><option>数字服务税率</option><option>标准税率</option><option>免税</option></select><input class="control" value="赠送积分：49"></div><div class="inline-note">标签、税率和积分策略继续复用原商品配置。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">虚拟商品显示规则:</div><div class="compact-field"><table class="mini-table"><thead><tr><th>字段</th><th>页面表现</th><th>触发条件</th></tr></thead><tbody><tr><td>货到付款 / 运输方式</td><td>隐藏</td><td>商品类型为虚拟商品</td></tr><tr><td>通关号 / 重量 / 体积 / 物流规则</td><td>隐藏</td><td>无实体履约</td></tr><tr><td>图片 / 售价 / FAQ / 税率 / 标签 / 积分</td><td>保留</td><td>所有商品类型通用</td></tr></tbody></table></div></div>
+                  </div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="virtual" data-node="virtual-config">
+                  <h3 class="tab-panel-title">虚拟商品</h3>
+                  <div class="compact-form">
+                    <div class="compact-row"><div class="compact-label">虚拟商品标题:</div><div class="compact-field"><input class="control" value="购买后可获得的虚拟权益"><div class="inline-note">用于前端模块标题展示。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">启用状态:</div><div class="compact-field"><label><input type="checkbox" checked> 启用虚拟商品模块</label></div></div>
+                    <div class="compact-row" data-node="delivery-rule"><div class="compact-label">发放节点:</div><div class="compact-field"><div class="inline"><label><input type="radio" name="deliveryNode" checked> 订单发货后</label><label><input type="radio" name="deliveryNode"> 订单确认收货后</label></div></div></div>
+                    <div class="compact-row"><div class="compact-label">发放规则:</div><div class="compact-field"><label><input type="checkbox" checked> 邮件通知</label><div class="inline-note">发放后向用户邮箱发送系统固定通知邮件。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">商品圈选:</div><div class="compact-field"><button class="btn green small" id="openProductPicker" type="button">+ 添加商品</button><table class="mini-table" style="margin-top:10px;"><thead><tr><th>商品ID</th><th>商品名</th><th>商品别名</th><th>SKU</th><th>虚拟商品价格</th><th>排序</th><th>组合库存数量</th><th>操作</th></tr></thead><tbody><tr><td>156</td><td>Artist 13.3 Pro V2</td><td><input class="control" value="Artist 13.3 Pro V2" style="height:36px;"></td><td>MD130FH</td><td><input class="control" value="299.99" style="height:36px;"></td><td><input class="control" value="0" style="height:36px;"></td><td><input class="control" value="100" style="height:36px;"></td><td><button class="btn green small">移除</button></td></tr><tr><td>160</td><td>Magic Drawing Pad</td><td><input class="control" value="Magic Drawing Pad" style="height:36px;"></td><td>MDP01</td><td><input class="control" value="439.99" style="height:36px;"></td><td><input class="control" value="10" style="height:36px;"></td><td><input class="control" value="80" style="height:36px;"></td><td><button class="btn green small">移除</button></td></tr></tbody></table><div class="inline-note">添加商品后直接进入已选商品列表。虚拟商品价格用于前端展示和组合售卖；排序控制前端模块商品顺序；组合库存数量用于限制该商品可参与虚拟商品发放的库存上限。</div></div></div>
+                    <div class="compact-row"><div class="compact-label">编码池绑定:</div><div class="compact-field"><table class="mini-table"><thead><tr><th style="width:90px;">商品ID</th><th style="width:180px;">商品名</th><th style="width:150px;">SKU</th><th>已绑定编码池</th><th style="width:170px;">操作</th></tr></thead><tbody><tr><td>156</td><td>Artist 13.3 Pro V2</td><td>MD130FH</td><td data-code-pool-cell><label><input type="checkbox" checked> 30天数字绘画课程编码池</label><br><label><input type="checkbox" checked> 虚拟课程兑换项目编码池</label></td><td><button class="btn green small" type="button" data-open-code-pool>+ 添加编码池</button></td></tr><tr><td>160</td><td>Magic Drawing Pad</td><td>MDP01</td><td data-code-pool-cell><label><input type="checkbox" checked> Software Premium Pack 兑换码池</label></td><td><button class="btn green small" type="button" data-open-code-pool>+ 添加编码池</button></td></tr></tbody></table><div class="inline-note">编码池按商品维度绑定；单个商品可绑定一个或多个编码池。兑换码不在商品创建页维护，发放时从对应商品已绑定的编码池中领取未使用兑换码。</div></div></div>
+                  </div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="detail">
+                  <h3 class="tab-panel-title">详细描述</h3>
+                  <div class="compact-form">
+                    <div class="compact-row"><div class="compact-label">商品概述:</div><div class="compact-field"><div class="editor-mock"><div class="editor-toolbar"><span class="editor-chip">自定义标题</span><span class="editor-chip">段落格式</span><span class="editor-chip">字体</span><span class="editor-chip">字号</span><span class="editor-chip">代码语言</span></div><div class="editor-area"></div><div class="editor-foot"><span>元素路径:</span><span>字数统计</span></div></div></div></div>
+                    <div class="compact-row"><div class="compact-label">配件清单:</div><div class="compact-field"><div class="editor-mock"><div class="editor-toolbar"><span class="editor-chip">自定义标题</span><span class="editor-chip">段落格式</span><span class="editor-chip">字体</span><span class="editor-chip">字号</span><span class="editor-chip">代码语言</span></div><div class="editor-area"></div><div class="editor-foot"><span>元素路径:</span><span>字数统计</span></div></div></div></div>
+                  </div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="other">
+                  <h3 class="tab-panel-title">其它信息</h3>
+                  <div class="compact-form">
+                    <div class="compact-row"><div class="compact-label">商品库存:</div><div class="compact-field"><input class="control" value="1000"></div></div>
+                    <div class="compact-row"><div class="compact-label">库存警告:</div><div class="compact-field"><input class="control" value="10"></div></div>
+                    <div class="compact-row"><div class="compact-label">单笔最大购买:</div><div class="compact-field"><input class="control" value="0"></div></div>
+                    <div class="compact-row"><div class="compact-label">商品推荐:</div><div class="compact-field"><label><input type="checkbox" checked> 上架</label> <label><input type="checkbox"> 推荐</label> <label><input type="checkbox"> 热卖</label> <label><input type="checkbox"> 新品</label> <label><input type="checkbox"> best seller</label> <label><input type="checkbox"> clearance</label></div></div>
+                    <div class="compact-row"><div class="compact-label">自定义标签:</div><div class="compact-field"><input class="control"></div></div>
+                    <div class="compact-row"><div class="compact-label">上下架时间:</div><div class="compact-field"><div class="two-cols"><input class="control" placeholder="上架时间"><input class="control" placeholder="下架时间"></div></div></div>
+                    <div class="compact-row"><div class="compact-label">下架跳转链接:</div><div class="compact-field"><input class="control"></div></div>
+                    <div class="compact-row"><div class="compact-label">运输方式:</div><div class="compact-field"><select class="control"><option>请选择运输方式</option><option>标准运输</option><option>免邮</option></select></div></div>
+                    <div class="compact-row"><div class="compact-label">COD:</div><div class="compact-field"><label><input type="checkbox"> 支持货到付款</label></div></div>
+                    <div class="compact-row"><div class="compact-label">重量/体积:</div><div class="compact-field"><div class="two-cols"><input class="control" placeholder="重量"><input class="control" placeholder="长 × 宽 × 高"></div></div></div>
+                  </div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="seo">
+                  <h3 class="tab-panel-title">SEO信息</h3>
+                  <div class="compact-form">
+                    <div class="compact-row"><div class="compact-label">路由名称:</div><div class="compact-field"><input class="control"></div></div>
+                    <div class="compact-row"><div class="compact-label">SEO标题:</div><div class="compact-field"><input class="control"></div></div>
+                    <div class="compact-row"><div class="compact-label">SEO关键字:</div><div class="compact-field"><input class="control"></div></div>
+                    <div class="compact-row"><div class="compact-label">SEO描述:</div><div class="compact-field"><textarea class="control" style="height:96px;padding-top:10px;"></textarea></div></div>
+                  </div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="gallery">
+                  <h3 class="tab-panel-title">商品相册</h3>
+                  <div class="media-grid"><div class="media-slot">上传图片</div><div class="media-slot">上传图片</div><div class="media-slot">上传图片</div></div>
+                  <div class="compact-form" style="margin-top:12px;"><div class="compact-row"><div class="compact-label">视频地址:</div><div class="compact-field"><input class="control"></div></div></div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="spec">
+                  <h3 class="tab-panel-title">商品规格</h3>
+                  <div class="compact-form">
+                    <div class="compact-row"><div class="compact-label">商品模型:</div><div class="compact-field"><select class="control"><option>请选择商品模型</option><option>数位板</option><option>配件</option><option>增值服务</option></select></div></div>
+                    <div class="compact-row"><div class="compact-label">商品规格:</div><div class="compact-field"><button class="btn green small">+ 添加规格</button></div></div>
+                    <div class="compact-row"><div class="compact-label">SKU列表:</div><div class="compact-field"><table class="mini-table"><thead><tr><th>SKU</th><th>价格</th><th>库存</th><th>操作</th></tr></thead><tbody><tr><td>SKU-001</td><td>0.00</td><td>0</td><td><button class="btn green small">编辑</button></td></tr></tbody></table></div></div>
+                  </div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="param">
+                  <h3 class="tab-panel-title">商品参数</h3>
+                  <div class="compact-form"><div class="compact-row"><div class="compact-label">商品参数:</div><div class="compact-field"><div class="editor-mock"><div class="editor-toolbar"><span class="editor-chip">自定义标题</span><span class="editor-chip">段落格式</span><span class="editor-chip">字体</span><span class="editor-chip">字号</span><span class="editor-chip">代码语言</span></div><div class="editor-area"></div><div class="editor-foot"><span>元素路径:</span><span>字数统计</span></div></div></div></div></div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="service">
+                  <h3 class="tab-panel-title">额外服务</h3>
+                  <div class="compact-form"><div class="compact-row"><div class="compact-label">服务项:</div><div class="compact-field"><table class="mini-table"><thead><tr><th>服务标题</th><th>价格类型</th><th>价格</th><th>操作</th></tr></thead><tbody><tr><td>额外服务名称</td><td>数值</td><td>0.00</td><td><button class="btn green small">编辑</button></td></tr></tbody></table></div></div><div class="compact-row"><div class="compact-label">新增服务:</div><div class="compact-field"><button class="btn green small">+ 添加服务</button></div></div></div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="media">
+                  <h3 class="tab-panel-title">媒体背书</h3>
+                  <div class="compact-form"><div class="compact-row"><div class="compact-label">模块标题:</div><div class="compact-field"><input class="control"></div></div><div class="compact-row"><div class="compact-label">模块内容:</div><div class="compact-field"><textarea class="control" style="height:96px;padding-top:10px;"></textarea></div></div><div class="compact-row"><div class="compact-label">状态:</div><div class="compact-field"><label><input type="checkbox"> 启用</label></div></div></div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="firework">
+                  <h3 class="tab-panel-title">firework</h3>
+                  <div class="compact-form"><div class="compact-row"><div class="compact-label">firework脚本:</div><div class="compact-field"><textarea class="control" style="height:96px;padding-top:10px;"></textarea></div></div><div class="compact-row"><div class="compact-label">开始时间:</div><div class="compact-field"><input class="control"></div></div><div class="compact-row"><div class="compact-label">结束时间:</div><div class="compact-field"><input class="control"></div></div><div class="compact-row"><div class="compact-label">状态:</div><div class="compact-field"><label><input type="checkbox"> 启用</label></div></div></div>
+                </section>
+
+                <section class="tab-panel" data-tab-panel="recommend"><h3 class="tab-panel-title">推荐商品</h3><div class="compact-form"><div class="compact-row"><div class="compact-label">推荐商品:</div><div class="compact-field"><button class="btn green small">+ 添加商品</button></div></div><div class="compact-row"><div class="compact-label">商品列表:</div><div class="compact-field"><table class="mini-table"><thead><tr><th>商品名称</th><th>SKU</th><th>排序</th><th>操作</th></tr></thead><tbody><tr><td>商品名称</td><td>SKU</td><td>0</td><td><button class="btn green small">移除</button></td></tr></tbody></table></div></div></div></section>
+                <section class="tab-panel" data-tab-panel="bundle"><h3 class="tab-panel-title">组合商品</h3><div class="compact-form"><div class="compact-row"><div class="compact-label">组合商品:</div><div class="compact-field"><button class="btn green small">+ 添加商品</button></div></div><div class="compact-row"><div class="compact-label">组合列表:</div><div class="compact-field"><table class="mini-table"><thead><tr><th>商品名称</th><th>SKU</th><th>数量</th><th>操作</th></tr></thead><tbody><tr><td>商品名称</td><td>SKU</td><td>1</td><td><button class="btn green small">移除</button></td></tr></tbody></table></div></div></div></section>
+                <section class="tab-panel" data-tab-panel="parts"><h3 class="tab-panel-title">商品配件</h3><div class="compact-form"><div class="compact-row"><div class="compact-label">商品配件:</div><div class="compact-field"><button class="btn green small">+ 添加配件</button></div></div><div class="compact-row"><div class="compact-label">配件列表:</div><div class="compact-field"><table class="mini-table"><thead><tr><th>配件名称</th><th>SKU</th><th>排序</th><th>操作</th></tr></thead><tbody><tr><td>配件名称</td><td>SKU</td><td>0</td><td><button class="btn green small">移除</button></td></tr></tbody></table></div></div></div></section>
+                <section class="tab-panel" data-tab-panel="link"><h3 class="tab-panel-title">联盟链接</h3><div class="compact-form"><div class="compact-row"><div class="compact-label">联盟链接:</div><div class="compact-field"><input class="control"></div></div><div class="compact-row"><div class="compact-label">状态:</div><div class="compact-field"><label><input type="checkbox"> 启用</label></div></div></div></section>
+                <section class="tab-panel" data-tab-panel="faq"><h3 class="tab-panel-title">FAQ集</h3><div class="compact-form"><div class="compact-row"><div class="compact-label">FAQ集:</div><div class="compact-field"><select class="control"><option>请选择FAQ集</option></select></div></div><div class="compact-row"><div class="compact-label">FAQ链接:</div><div class="compact-field"><input class="control"></div></div></div></section>
+              </div>
+              <div class="primary-actions" data-node="create-flow">
+                <button class="btn gray" data-screen-button="list">返回列表</button>
+                <button class="btn green" id="saveDraft">保存草稿</button>
+                <button class="btn blue" id="submitAudit">提交发布</button>
+                <button class="btn green" id="previewDelivery">发放预览</button>
+              </div>
+            </div>
+          </section>
+
+        </section>
+
+        <aside class="sidebar module-panel" data-module-panel="order">
+          <div class="side-section">
+            <div class="side-title gray">◉ 控制台</div>
+          </div>
+          <div class="side-section">
+            <div class="side-title">▣ 订单管理 <span class="arrow">⌄</span></div>
+            <ul class="side-list">
+              <li class="active" data-order-menu="orderList" data-screen-button="orderList">订单列表</li>
+              <li data-order-menu="orderShipment" data-screen-button="orderShipment">发货单</li>
+              <li data-order-menu="returnType" data-screen-button="returnType">退换货类型</li>
+              <li data-order-menu="returnList" data-screen-button="returnList">退换货列表</li>
+              <li data-order-menu="refundList" data-screen-button="refundList">退款列表</li>
+            </ul>
+          </div>
+          <div class="side-section">
+            <div class="side-title">▣ 促销管理 <span class="arrow">⌄</span></div>
+            <ul class="side-list">
+              <li>订单优惠码管理</li>
+              <li>商品优惠券/码管理</li>
+              <li>活动促销管理</li>
+              <li>满减活动管理</li>
+              <li>促销活动回收站</li>
+              <li>换购活动列表</li>
+            </ul>
+          </div>
+          <div class="side-section">
+            <div class="side-title">▣ 收据管理 <span class="arrow">⌄</span></div>
+            <ul class="side-list">
+              <li>收据模板列表</li>
+              <li>收据列表</li>
+            </ul>
+          </div>
+          <div class="side-section">
+            <div class="side-title">▣ 发票管理 <span class="arrow">⌄</span></div>
+            <ul class="side-list">
+              <li>发票模板列表</li>
+              <li>发票列表</li>
+            </ul>
+          </div>
+          <div class="side-section">
+            <div class="side-title">▣ 合作项目管理 <span class="arrow">⌄</span></div>
+            <ul class="side-list">
+              <li data-order-menu="orderProject" data-screen-button="orderProject">合作项目</li>
+              <li data-order-menu="orderCodePool" data-screen-button="orderCodePool">编码池列表</li>
+            </ul>
+          </div>
+        </aside>
+
+        <section class="main module-panel" data-module-panel="order">
+          <div class="crumbs">
+            <span>⌂ 首页</span><span>›</span><span>订单管理</span><span>›</span><strong id="orderCrumbText">订单列表</strong>
+            <span class="lang">France</span>
+          </div>
+
+          <section class="screen active" data-screen="orderList">
+            <div class="order-list-filters" data-node="order-list-filter">
+              <input class="control" placeholder="收货人/手机号">
+              <input class="control" placeholder="订单号">
+              <input class="control" placeholder="邮箱">
+              <input class="control" placeholder="交易号">
+              <input class="control" placeholder="reason_code">
+              <input class="control" placeholder="开始时间">
+              <input class="control" placeholder="结束时间">
+              <select class="control"><option>支付状态</option><option>未支付</option><option>已支付</option><option>等待到账</option><option>被拒付</option></select>
+              <select class="control"><option>支付方式</option><option>Paypal</option><option>Adyen</option><option>Alipayhk_test</option><option>Alipayhk_live</option></select>
+            </div>
+            <div class="order-list-filters compact-second">
+              <select class="control"><option>发货状态</option><option>未发货</option><option>已发货</option><option>部分发货</option></select>
+              <select class="control"><option>订单状态</option><option>待确认</option><option>已确认</option><option>已收货</option><option>已取消</option><option>已完成</option><option>已作废</option><option>已暂停</option><option>退款中</option><option>已退款</option><option>部分退款</option></select>
+              <select class="control"><option>同步状态</option><option>正常</option><option>同步出错</option></select>
+              <select class="control"><option>请选择邮保状态</option><option selected>未使用邮保</option><option>已使用邮保</option></select>
+              <button class="btn blue" id="orderListSearchBtn">⌕ 查 询</button>
+              <button class="btn gray" id="orderListResetBtn">查询导出</button>
+            </div>
+
+            <div class="table-wrap order-table" data-node="order-list-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:360px;">★</th>
+                    <th style="width:360px;">订单编号</th>
+                    <th style="width:70px;">收货人</th>
+                    <th style="width:84px;">终端</th>
+                    <th style="width:82px;">总金额</th>
+                    <th style="width:82px;">应付金额</th>
+                    <th style="width:58px;">订单状态</th>
+                    <th style="width:58px;">支付状态</th>
+                    <th style="width:58px;">发货状态</th>
+                    <th style="width:58px;">物流状态</th>
+                    <th style="width:70px;">同步MIS</th>
+                    <th style="width:130px;">卖家保护</th>
+                    <th style="width:80px;">订单币种</th>
+                    <th style="width:80px;">订单国家</th>
+                    <th style="width:145px;">下单时间</th>
+                    <th style="width:90px;">ETA时间</th>
+                    <th style="width:190px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>☆</td>
+                    <td><a class="order-no" href="#" data-screen-button="orderDetail">UATFR-2606151201561135</a></td>
+                    <td>JP L</td>
+                    <td>网页端</td>
+                    <td>€335,96</td>
+                    <td>€339,86</td>
+                    <td><span class="state-green">已确认</span></td>
+                    <td><span class="state-green">已支付</span></td>
+                    <td><span class="state-red">未发货</span></td>
+                    <td><span class="state-red">未签收</span></td>
+                    <td>0|</td>
+                    <td title="TID:REQUEST2606151202307459 PayMode:PAY_BY_BANK_DE">Alipayhk;PAY_BY_BANK_DE</td>
+                    <td>EUR</td>
+                    <td></td>
+                    <td>2026-06-15 12:01:56</td>
+                    <td></td>
+                    <td><div class="ace-actions"><a class="ace-mini-btn green" href="#" data-screen-button="orderDetail">👁</a><a class="ace-mini-btn red" href="#">🗑</a><a class="ace-mini-btn blue" href="#">↕</a><a class="ace-mini-btn blue" href="#">创建售后单</a></div></td>
+                  </tr>
+                  <tr>
+                    <td>☆</td>
+                    <td><a class="order-no" href="#" data-screen-button="orderDetail">UATFR-2606151200104263</a></td>
+                    <td>JP L</td>
+                    <td>网页端</td>
+                    <td>€335,96</td>
+                    <td>€339,86</td>
+                    <td><span class="state-green">已确认</span></td>
+                    <td><span class="state-green">已支付</span></td>
+                    <td><span class="state-red">未发货</span></td>
+                    <td><span class="state-red">未签收</span></td>
+                    <td>0|</td>
+                    <td title="PayMode:PAY_BY_BANK_DE">Alipayhk;PAY_BY_BANK_DE</td>
+                    <td>EUR</td>
+                    <td></td>
+                    <td>2026-06-15 12:00:10</td>
+                    <td></td>
+                    <td><div class="ace-actions"><a class="ace-mini-btn green" href="#" data-screen-button="orderDetail">👁</a><a class="ace-mini-btn red" href="#">🗑</a><a class="ace-mini-btn blue" href="#">↕</a><a class="ace-mini-btn blue" href="#">创建售后单</a></div></td>
+                  </tr>
+                  <tr>
+                    <td>☆</td>
+                    <td><a class="order-no" href="#" data-screen-button="orderDetail">UATFR-2606151158507779</a></td>
+                    <td>JP L</td>
+                    <td>网页端</td>
+                    <td>€335,96</td>
+                    <td>€339,86</td>
+                    <td><span class="state-green">已确认</span></td>
+                    <td><span class="state-green">已支付</span></td>
+                    <td><span class="state-red">未发货</span></td>
+                    <td><span class="state-red">未签收</span></td>
+                    <td>0|</td>
+                    <td title="PayMode:PAY_BY_BANK_ES">Alipayhk;PAY_BY_BANK_ES</td>
+                    <td>EUR</td>
+                    <td></td>
+                    <td>2026-06-15 11:58:50</td>
+                    <td></td>
+                    <td><div class="ace-actions"><a class="ace-mini-btn green" href="#" data-screen-button="orderDetail">👁</a><a class="ace-mini-btn red" href="#">🗑</a><a class="ace-mini-btn blue" href="#">↕</a><a class="ace-mini-btn blue" href="#">创建售后单</a></div></td>
+                  </tr>
+                  <tr>
+                    <td>☆</td>
+                    <td><a class="order-no" href="#" data-screen-button="orderDetail">UATFR-2606091715204814</a></td>
+                    <td>Mehdi Kikou</td>
+                    <td>手机端<br>(iphone)</td>
+                    <td>€1,00</td>
+                    <td>€1,00</td>
+                    <td><span class="state-red">待确认</span></td>
+                    <td><span class="state-red">未支付</span></td>
+                    <td><span class="state-red">未发货</span></td>
+                    <td><span class="state-red">未签收</span></td>
+                    <td>0|</td>
+                    <td></td>
+                    <td>EUR</td>
+                    <td></td>
+                    <td>2026-06-09 17:15:20</td>
+                    <td></td>
+                    <td><div class="ace-actions"><a class="ace-mini-btn green" href="#" data-screen-button="orderDetail">👁</a><a class="ace-mini-btn red" href="#">🗑</a><a class="ace-mini-btn blue" href="#">↕</a></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="orderDetail">
+            <div class="detail-layout" data-node="order-detail">
+              <div class="info-block">
+                <div class="info-title">基本信息</div>
+                <div class="info-body">
+                  <table class="mini-table">
+                    <thead><tr><th>订单ID</th><th>订单号</th><th>交易号</th><th>会员</th><th>E-Mail</th><th>电话</th><th>应付金额</th><th>默认税率</th><th>订单状态</th><th>支付状态</th><th>配送状态</th><th>邮保状态</th><th>下单时间</th><th>支付时间</th></tr></thead>
+                    <tbody><tr><td>161114</td><td>UATFR-2606151201561135</td><td>REQUEST2606151202307459</td><td></td><td></td><td></td><td><span class="state-red">€339,86</span></td><td>0.0000</td><td><span class="state-green">已确认</span></td><td><span class="state-green">已支付</span></td><td><span class="state-red">未发货</span></td><td><span class="state-red">未生效</span></td><td>15-06-26<br>14:01:56</td><td>Alipayhk_test<br>2026-06-15<br>12:02:47</td></tr></tbody>
+                  </table>
+                  <table class="mini-table" style="margin-top:-1px;">
+                    <tbody><tr><td style="width:90px;font-weight:700;">订单备注</td><td></td><td style="width:80px;font-weight:700;">发票抬头:</td><td></td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="info-block">
+                <div class="info-title">收货信息（修改）</div>
+                <div class="info-body">
+                  <table class="mini-table">
+                    <thead><tr><th>收货人</th><th>联系方式</th><th>地址</th><th>邮编</th><th>通关号</th><th>配送方式</th><th>ETA时间</th></tr></thead>
+                    <tbody><tr><td>JP L</td><td>15916762098<br>1451397728@qq.com</td><td>JP L 龙华人民路123 12345 深圳市 123123 Germany</td><td>12345</td><td></td><td>Livraison Standard</td><td>无</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="info-block">
+                <div class="info-title">商品信息</div>
+                <div class="info-body">
+                  <table class="mini-table order-product-table">
+                    <thead><tr><th style="width:420px;">商品</th><th style="width:170px;">商品SKU</th><th style="width:116px;">单品价格</th><th style="width:100px;">优惠价</th><th style="width:76px;">订单商品数量</th><th style="width:76px;">发货数量</th><th style="width:58px;">发货国</th><th style="width:76px;">发货税率</th><th style="width:86px;">商品税费</th><th style="width:110px;">商品不含税金额</th><th style="width:72px;">物流信息</th><th style="width:94px;">小计</th><th style="width:86px;">FOB价格</th><th style="width:100px;">Barcode</th><th style="width:112px;">分配的商品保费</th><th style="width:140px;"></th></tr></thead>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <div class="order-product-cell">
+                            <img src="https://resource.xp-pen.com/Uploads/fr/goods/20230714/1919d905aeeeedaa8f2b1f7aefad4a34_60_60.webp" alt="Deco Pro Gen2 MW/LW/XLW">
+                            <div>
+                              <a class="order-product-title" href="#">Deco Pro Gen2 MW/LW/XLW</a>
+                              <div class="order-product-spec">Taille:MW</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>MT0962B_ACK05</td>
+                        <td>€159,99</td>
+                        <td>€319,98</td>
+                        <td>x 2</td>
+                        <td>x 2</td>
+                        <td></td>
+                        <td>0%</td>
+                        <td>€0,00</td>
+                        <td>€0,00</td>
+                        <td>-</td>
+                        <td><span class="amount-red">€319,98</span></td>
+                        <td>€0,00</td>
+                        <td></td>
+                        <td>€9,60</td>
+                        <td><a class="refund-btn" href="#">申请退款</a></td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div class="order-product-cell indent">
+                            <img src="https://resource.xp-pen.com/Uploads/goods/20180913/a57fbb14d888e274afaa2d2a0d7f212e_60_60.webp" alt="XPPen AC08 Gant de Dessin S/M/L">
+                            <div>
+                              <a class="order-product-title" href="#">XPPen AC08<br>Gant de Dessin</a>
+                              <div class="order-product-spec">Size:L</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>AC08_L</td>
+                        <td>€4,99<span class="state-red">(虚拟课程)</span><br><s>€7,99</s></td>
+                        <td>€9,98</td>
+                        <td>x 2</td>
+                        <td>x 2</td>
+                        <td></td>
+                        <td>0%</td>
+                        <td>€0,00</td>
+                        <td>€0,00</td>
+                        <td>-</td>
+                        <td><span class="amount-red">€9,98</span></td>
+                        <td>€0,00</td>
+                        <td></td>
+                        <td>€0,30</td>
+                        <td><a class="refund-btn" href="#">申请退款</a></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="info-block">
+                <div class="info-title">费用信息</div>
+                <div class="info-body">
+                  <table class="mini-table">
+                    <thead><tr><th>商品总价</th><th>运费</th><th>配送保费</th><th>订单税费</th><th>订单不含税金额</th><th>商品促销/直降优惠</th><th>商品优惠券抵扣</th><th>优惠码抵扣(订单+商品优惠码)</th><th>订单促销优惠</th><th>会员折扣</th><th>账户余额</th><th>价格调整</th><th>积分抵扣</th><th>应付金额</th></tr></thead>
+                    <tbody><tr><td>€335,96</td><td>+ €0,00</td><td>+ €9,90</td><td>+ €0,00</td><td>€339,86</td><td>- €6,00</td><td>- €0,00</td><td>- €0,00</td><td>- €0,00</td><td></td><td></td><td>0.00</td><td>- 0.00</td><td>€339,86</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="info-block">
+                <div class="info-title">操作信息</div>
+                <div class="info-body">
+                  <table class="mini-table">
+                    <tbody>
+                      <tr><td style="width:120px;font-weight:700;">操作备注</td><td><textarea class="control" style="height:110px;width:100%;" placeholder="请输入操作备注"></textarea></td></tr>
+                      <tr><td style="font-weight:700;">当前可执行操作</td><td><button class="btn blue small">添加备注</button> <button class="btn blue small">暂停发货</button> <button class="btn green small" data-screen-button="orderShipment">去发货</button> <button class="btn blue small" data-screen-button="refundList">Seels退款</button> <button class="btn gray small">同步到mis</button> <button class="btn gray small" data-screen-button="orderList">返回列表</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="info-block">
+                <div class="info-title">操作记录</div>
+                <div class="info-body">
+                  <table class="mini-table">
+                    <thead><tr><th>操作者</th><th>操作时间</th><th>订单状态</th><th>付款状态</th><th>发货状态</th><th>描述</th><th>备注</th></tr></thead>
+                    <tbody>
+                      <tr><td>Alipayhk</td><td>2026-06-15 12:02:52</td><td><span class="state-green">已确认</span></td><td><span class="state-green">已支付</span></td><td><span class="state-red">未发货</span></td><td>success.</td><td>capture成功</td></tr>
+                      <tr><td></td><td>2026-06-15 12:02:51</td><td><span class="state-green">已确认</span></td><td><span class="state-green">已支付</span></td><td><span class="state-red">未发货</span></td><td>付款成功</td><td>订单付款成功</td></tr>
+                      <tr><td>Alipayhk</td><td>2026-06-15 12:02:47</td><td><span class="state-red">待确认</span></td><td><span class="state-red">等待到账</span></td><td><span class="state-red">未发货</span></td><td>PROCESSING</td><td>pending</td></tr>
+                      <tr><td></td><td>2026-06-15 12:01:58</td><td><span class="state-red">待确认</span></td><td><span class="state-red">未支付</span></td><td><span class="state-red">未发货</span></td><td>提交订单</td><td>您提交了订单，请等待系统确认</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="orderShipment">
+            <div class="order-list-filters" style="grid-template-columns: 210px 210px 160px 160px 116px 116px;" data-node="order-shipment">
+              <input class="control" placeholder="发货单号 / 订单号">
+              <input class="control" placeholder="收货人 / 电话">
+              <select class="control"><option>发货状态</option><option>待发货</option><option>已发货</option><option>已签收</option></select>
+              <select class="control"><option>物流公司</option><option>DHL</option><option>DPD</option><option>Correos</option></select>
+              <button class="btn blue">⌕ 查 询</button>
+              <button class="btn gray">重 置</button>
+            </div>
+            <div class="table-wrap order-table">
+              <table>
+                <thead><tr><th>发货单号</th><th>订单号</th><th>收货人</th><th>物流公司</th><th>物流单号</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+                <tbody>
+                  <tr><td>SHIP20260617001</td><td>PT202606170001</td><td>Maria Silva</td><td><select class="control"><option>DHL</option><option>DPD</option></select></td><td><input class="control" value="DHL-PT-8829001"></td><td><span class="status-label warn">待发货</span></td><td>2026-06-17 10:35</td><td><a class="product-link" href="#">确认发货</a> | <a class="product-link" href="#" data-screen-button="orderDetail">查看订单</a></td></tr>
+                  <tr><td>SHIP20260615042</td><td>FR202606150042</td><td>Lucie Moreau</td><td>DPD</td><td>DPD-FR-770183</td><td><span class="status-label">已发货</span></td><td>2026-06-15 11:20</td><td><a class="product-link" href="#">查看物流</a> | <a class="product-link" href="#" data-screen-button="orderDetail">查看订单</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="returnType">
+            <div class="order-filters" style="grid-template-columns: 240px 140px 136px;">
+              <input class="control" placeholder="退换货类型名称">
+              <select class="control"><option>状态</option><option>启用</option><option>禁用</option></select>
+              <button class="btn green">+ 添加类型</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>类型名称</th><th>适用场景</th><th>是否需要退回商品</th><th>状态</th><th>排序</th><th>操作</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>仅退款</td><td>未发货、虚拟权益异常</td><td>否</td><td><span class="tick">✓</span></td><td>0</td><td><a class="product-link" href="#">修改</a> | <a class="tag" href="#">删除</a></td></tr>
+                  <tr><td>2</td><td>退货退款</td><td>已收货退回实体商品</td><td>是</td><td><span class="tick">✓</span></td><td>10</td><td><a class="product-link" href="#">修改</a> | <a class="tag" href="#">删除</a></td></tr>
+                  <tr><td>3</td><td>换货</td><td>质量问题换新</td><td>是</td><td><span class="tick">✓</span></td><td>20</td><td><a class="product-link" href="#">修改</a> | <a class="tag" href="#">删除</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="returnList">
+            <div class="order-list-filters" style="grid-template-columns: 190px 190px 160px 160px 116px 116px;">
+              <input class="control" placeholder="退换货单号">
+              <input class="control" placeholder="订单号">
+              <select class="control"><option>售后类型</option><option>退货退款</option><option>换货</option></select>
+              <select class="control"><option>处理状态</option><option>待审核</option><option>待用户寄回</option><option>已完成</option></select>
+              <button class="btn blue">⌕ 查 询</button>
+              <button class="btn gray">重 置</button>
+            </div>
+            <div class="table-wrap order-table">
+              <table>
+                <thead><tr><th>退换货单号</th><th>订单号</th><th>会员</th><th>类型</th><th>商品</th><th>原因</th><th>状态</th><th>申请时间</th><th>操作</th></tr></thead>
+                <tbody>
+                  <tr><td>RET20260617001</td><td>FR202606150042</td><td>lucie@example.fr</td><td>换货</td><td>Magic Drawing Pad</td><td>屏幕显示异常</td><td><span class="status-label warn">待审核</span></td><td>2026-06-17 12:08</td><td><a class="product-link" href="#">审核</a> | <a class="product-link" href="#" data-screen-button="orderDetail">查看订单</a></td></tr>
+                  <tr><td>RET20260612006</td><td>PT202606110022</td><td>ana@example.pt</td><td>退货退款</td><td>Deco 01 V3</td><td>重复购买</td><td><span class="status-label">已完成</span></td><td>2026-06-12 09:40</td><td><a class="product-link" href="#">查看</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="refundList">
+            <div class="order-list-filters" style="grid-template-columns: 190px 190px 160px 160px 116px 116px;">
+              <input class="control" placeholder="退款单号">
+              <input class="control" placeholder="订单号">
+              <select class="control"><option>退款状态</option><option>待处理</option><option>退款中</option><option>已退款</option><option>已拒绝</option></select>
+              <select class="control"><option>退款方式</option><option>原路退回</option><option>线下退款</option></select>
+              <button class="btn blue">⌕ 查 询</button>
+              <button class="btn gray">重 置</button>
+            </div>
+            <div class="table-wrap order-table">
+              <table>
+                <thead><tr><th>退款单号</th><th>订单号</th><th>会员</th><th>退款金额</th><th>退款原因</th><th>退款方式</th><th>状态</th><th>申请时间</th><th>操作</th></tr></thead>
+                <tbody>
+                  <tr><td>REF20260617002</td><td>PT202606160087</td><td>joao@example.pt</td><td>€49.99</td><td>课程兑换失败</td><td>原路退回</td><td><span class="status-label warn">待处理</span></td><td>2026-06-17 14:20</td><td><a class="product-link" href="#">处理</a> | <a class="product-link" href="#" data-screen-button="orderDetail">查看订单</a></td></tr>
+                  <tr><td>REF20260610012</td><td>FR202606090031</td><td>pierre@example.fr</td><td>€19.99</td><td>兑换码重复</td><td>原路退回</td><td><span class="status-label">已退款</span></td><td>2026-06-10 18:12</td><td><a class="product-link" href="#">查看</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="orderProject">
+            <div class="order-filters" data-node="order-project-filter">
+              <input class="control" placeholder="活动开始时间">
+              <input class="control" placeholder="活动结束时间">
+              <select class="control"><option>状态</option><option>启用</option><option>禁用</option></select>
+              <button class="btn blue" id="orderSearchBtn">⌕ 查 询</button>
+              <button class="btn green" data-screen-button="orderProjectCreate">+ 创建项目</button>
+            </div>
+
+            <div class="table-wrap project-table" data-node="order-project-list">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:48px;">ID</th>
+                    <th style="width:300px;">项目名称</th>
+                    <th style="width:62px;">总数</th>
+                    <th style="width:62px;">已发</th>
+                    <th style="width:82px;">剩余数量</th>
+                    <th style="width:70px;">状态</th>
+                    <th style="width:150px;">开始时间</th>
+                    <th style="width:150px;">结束时间</th>
+                    <th style="width:330px;">商品</th>
+                    <th style="width:210px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>18</td>
+                    <td>TUTO Créer une Illustration Sci-Fi avec Affinity Designer</td>
+                    <td>1000</td>
+                    <td>990</td>
+                    <td>10</td>
+                    <td><span class="tick">启</span></td>
+                    <td>2024-10-31</td>
+                    <td>2026-02-01</td>
+                    <td class="project-products">
+                      Artist 13.3 Pro V2（虚拟课程）<br>Artist 15.6 Pro V2（虚拟课程）<br>Artist Pro 24(Gen2) 165Hz（虚拟课程）<br>Magic Drawing Pad（虚拟课程）<br>Deco 01 V2（虚拟课程）
+                    </td>
+                    <td><a class="product-link" href="#">修改</a> | <a class="tag" href="#">删除</a></td>
+                  </tr>
+                  <tr>
+                    <td>19</td>
+                    <td>虚拟课程兑换项目 - 30 天绘画课</td>
+                    <td>500</td>
+                    <td>186</td>
+                    <td>314</td>
+                    <td><span class="tick">启</span></td>
+                    <td>2026-06-16</td>
+                    <td>2026-12-31</td>
+                    <td class="project-products">
+                      Curso de desenho digital - 30 dias（虚拟课程）<br>XP-PEN Plus（虚拟课程）<br>Software Premium Pack（虚拟课程）
+                    </td>
+                    <td><a class="product-link" href="#">修改</a> | <a class="tag" href="#">删除</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="orderCodePool">
+            <h3 class="tab-panel-title" style="margin-top: 22px;">编码池列表</h3>
+            <div class="code-manage-filters" data-node="code-manage-filter">
+              <input class="control" placeholder="编码组名称">
+              <select class="control short"><option>状态</option><option>开启</option><option>关闭</option></select>
+              <span class="date-input"><input class="control" placeholder="创建开始时间"></span>
+              <span class="date-input"><input class="control" placeholder="创建结束时间"></span>
+              <button class="btn blue">⌕ 查 询</button>
+              <button class="btn gray">重 置</button>
+              <button class="btn green" data-screen-button="orderCodeGroupEdit">+ 添加编码组</button>
+            </div>
+
+            <div class="table-wrap code-table" data-node="code-manage-list">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:70px;">ID</th>
+                    <th style="width:260px;">编码组名称</th>
+                    <th style="width:140px;">兑换码数量</th>
+                    <th style="width:140px;">已使用数量</th>
+                    <th style="width:120px;">状态</th>
+                    <th style="width:220px;">添加时间</th>
+                    <th style="width:220px;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>18</td><td>30天数字绘画课程编码池</td><td>1000</td><td>990</td><td><span class="tick">开启</span></td><td>2024-10-24 18:26:35</td><td><a class="product-link" href="#" data-screen-button="orderCodeGroupEdit">查看</a> | <a class="product-link" href="#" data-screen-button="orderCodeGroupEdit">修改</a> | <a class="tag" href="#">删除</a></td></tr>
+                  <tr><td>19</td><td>虚拟课程兑换项目编码池</td><td>500</td><td>186</td><td><span class="tick">开启</span></td><td>2026-06-16 16:33:13</td><td><a class="product-link" href="#" data-screen-button="orderCodeGroupEdit">查看</a> | <a class="product-link" href="#" data-screen-button="orderCodeGroupEdit">修改</a> | <a class="tag" href="#">删除</a></td></tr>
+                  <tr><td>20</td><td>Software Premium Pack 兑换码池</td><td>300</td><td>82</td><td><span class="muted">关闭</span></td><td>2026-05-20 09:18:02</td><td><a class="product-link" href="#" data-screen-button="orderCodeGroupEdit">查看</a> | <a class="product-link" href="#" data-screen-button="orderCodeGroupEdit">修改</a> | <a class="tag" href="#">删除</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="orderCodeGroupEdit">
+            <div class="order-form" data-node="code-group-edit">
+              <div class="order-row">
+                <div class="order-label">编码组名称:</div>
+                <div class="order-field"><input class="control" value="30天数字绘画课程编码池"></div>
+              </div>
+              <div class="order-row">
+                <div class="order-label">状态:</div>
+                <div class="order-field"><select class="control"><option>开启</option><option>关闭</option></select></div>
+              </div>
+              <div class="order-row">
+                <div class="order-label">编码备注:</div>
+                <div class="order-field"><textarea class="control" style="height: 92px;">用于合作项目下虚拟课程权益发放，用户购买圈选商品并满足发放节点后，从该编码池领取未使用兑换码。</textarea></div>
+              </div>
+              <div class="order-row">
+                <div class="order-label">编码维护:</div>
+                <div class="order-field">
+                  <div class="code-manage-filters">
+                    <input class="control" placeholder="兑换码">
+                    <span class="date-input"><input class="control" placeholder="领取时间"></span>
+                    <select class="control short"><option>状态</option><option>未领取</option><option>已领取</option></select>
+                    <button class="btn blue small">⌕ 查询</button>
+                    <button class="btn green small">+ 批量上传</button>
+                    <button class="btn green small">+ 添加兑换码</button>
+                    <button class="btn blue small">▧ 导出数据</button>
+                  </div>
+                  <table class="mini-table">
+                    <thead><tr><th style="width:48px;"><span class="fake-check"></span></th><th>ID</th><th>兑换码</th><th>关联订单号</th><th>状态</th><th>领取时间</th><th>添加时间</th><th>操作</th></tr></thead>
+                    <tbody>
+                      <tr><td><span class="fake-check"></span></td><td>8087</td><td>CARD-4TGQ-44WM-HQSX</td><td>0</td><td>未领取</td><td>0</td><td>2024-10-24 18:26:35</td><td><a class="product-link" href="#">修改</a> | <a class="tag" href="#">删除</a></td></tr>
+                      <tr><td><span class="fake-check"></span></td><td>8097</td><td>CARD-4TNQ-B64P-HV7X</td><td>WEBFR-2510210257023419</td><td>已领取</td><td>2025-11-07 18:25:51</td><td>2024-10-24 18:26:35</td><td><a class="product-link" href="#">修改</a></td></tr>
+                      <tr><td><span class="fake-check"></span></td><td>8098</td><td>CARD-4TQU-TVP8-EY6K</td><td>WEBFR-2510210312375284</td><td>已领取</td><td>2025-11-07 18:14:35</td><td>2024-10-24 18:26:35</td><td><a class="product-link" href="#">修改</a></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="primary-actions">
+              <button class="btn gray" data-screen-button="orderCodePool">返回列表</button>
+              <button class="btn green" data-screen-button="orderCodePool">保存编码组</button>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="orderProjectCreate">
+            <div class="order-form" data-node="order-project-create">
+              <div class="order-row">
+                <div class="order-label">项目名称:</div>
+                <div class="order-field"><input class="control" value="虚拟课程兑换项目 - 30 天绘画课"></div>
+              </div>
+              <div class="order-row" style="min-height:620px;">
+                <div class="order-label">描述:</div>
+                <div class="order-field">
+                  <div class="order-editor">
+                    <div class="order-editor-toolbar">
+                      <span class="tool-chip">HTML</span><span class="tool-chip">↶</span><span class="tool-chip">↷</span><span class="tool-chip">B</span><span class="tool-chip">I</span><span class="tool-chip">U</span><span class="tool-chip">A</span><span class="tool-chip">abc</span><span class="tool-chip">x²</span><span class="tool-chip">🔗</span><span class="tool-chip">“”</span><span class="tool-chip">T</span>
+                      <span class="tool-chip">自定义标题</span><span class="tool-chip">段落格式</span><span class="tool-chip">字体</span><span class="tool-chip">字号</span><span class="tool-chip">¶</span><span class="tool-chip">▣</span><span class="tool-chip">表格</span><span class="tool-chip">代码语言</span><span class="tool-chip">图片</span><span class="tool-chip">视频</span><span class="tool-chip">音乐</span><span class="tool-chip">附件</span><span class="tool-chip">日历</span>
+                    </div>
+                    <div class="order-editor-area"></div>
+                    <div class="order-editor-foot"><span>元素路径:</span><span>字数统计</span></div>
+                  </div>
+                  <div class="inline-note">描述内容用于介绍该项目下分配的编码，会直接和编码一起显示在前台分配信息的位置。</div>
+                </div>
+              </div>
+              <div class="order-row">
+                <div class="order-label">状态:</div>
+                <div class="order-field"><select class="control"><option>禁用</option><option>启用</option></select></div>
+              </div>
+              <div class="order-row">
+                <div class="order-label">活动开始时间:</div>
+                <div class="order-field"><input class="control" value="2026-06-16 16:33:13"></div>
+              </div>
+              <div class="order-row">
+                <div class="order-label">活动结束时间:</div>
+                <div class="order-field"><input class="control" value="2026-12-31 23:59:59"></div>
+              </div>
+              <div class="order-row">
+                <div class="order-label">关联商品:</div>
+                <div class="order-field"><button class="btn green small">+ 选择商品</button><div class="inline-note">支持选择实体商品，也支持选择虚拟课程、延保服务、兑换码权益包。</div></div>
+              </div>
+            </div>
+            <div class="primary-actions">
+              <button class="btn gray" data-screen-button="orderProject">返回列表</button>
+              <button class="btn green" id="projectSaveBtn">保存项目</button>
+            </div>
+          </section>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <div class="modal-mask" id="modal">
+    <div class="modal">
+      <div class="modal-head">虚拟权益发放预览</div>
+      <div class="modal-body">
+        <p><strong>购买商品：</strong>Curso de desenho digital - 30 dias</p>
+        <p><strong>触发时机：</strong>订单发货后</p>
+        <p><strong>用户将看到：</strong>订单详情页展示课程兑换入口，同时发送葡语邮件通知。</p>
+        <p><strong>异常处理：</strong>课程接口失败时订单进入“待补发”，运营可在兑换记录中手动补发。</p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn gray small" id="closeModal">关闭</button>
+        <button class="btn blue small">确认规则</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="productPickerModal">
+    <div class="modal" style="width: 860px;">
+      <div class="modal-head">选择商品</div>
+      <div class="modal-body">
+        <div class="order-filters" style="grid-template-columns: 1fr 1fr 150px 150px 96px 96px;">
+          <input class="control" placeholder="商品名称">
+          <input class="control" placeholder="商品SKU名称">
+          <select class="control"><option>请选择分类</option><option>Mesa Digitalizadora</option><option>Tela Digitalizadora</option><option>Acessorios</option></select>
+          <select class="control"><option>全部商品类型</option><option>普通</option><option>配件/库存/二手</option><option>虚拟商品</option><option>变体子商品</option></select>
+          <button class="btn blue small">查询</button>
+          <button class="btn gray small">重置</button>
+        </div>
+        <table class="mini-table">
+          <thead><tr><th style="width:48px;"></th><th>商品ID</th><th>商品名称</th><th>SKU</th><th>分类</th><th>商品类型</th><th>售价</th><th>库存</th></tr></thead>
+          <tbody>
+            <tr class="picker-row"><td><span class="fake-check"></span></td><td>156</td><td>Artist 13.3 Pro V2</td><td>MD130FH</td><td>Tela Digitalizadora</td><td>普通</td><td>299.99</td><td>992</td></tr>
+            <tr class="picker-row"><td><span class="fake-check"></span></td><td>160</td><td>Magic Drawing Pad</td><td>MDP01</td><td>Note Pad</td><td>普通</td><td>439.99</td><td>998</td></tr>
+            <tr class="picker-row"><td><span class="fake-check"></span></td><td>159</td><td>Deco Mini7 V2</td><td>DECO MINI7 V2</td><td>Mesa Digitalizadora</td><td>配件/库存/二手</td><td>39.99</td><td>998</td></tr>
+          </tbody>
+        </table>
+        <div class="inline-note">勾选商品后点击“确认选择”，商品会进入虚拟商品页签的已选商品列表。</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn gray small" id="closeProductPicker">取消</button>
+        <button class="btn blue small" id="confirmProductPicker">确认选择</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="codePoolPickerModal">
+    <div class="modal" style="width: 820px;">
+      <div class="modal-head">选择编码池</div>
+      <div class="modal-body">
+        <div class="order-filters" style="grid-template-columns: 1fr 150px 96px 96px;">
+          <input class="control" placeholder="编码池名称">
+          <select class="control"><option>全部状态</option><option>开启</option><option>关闭</option></select>
+          <button class="btn blue small">查询</button>
+          <button class="btn gray small">重置</button>
+        </div>
+        <table class="mini-table">
+          <thead><tr><th style="width:48px;"></th><th style="width:80px;">ID</th><th>编码池名称</th><th style="width:120px;">兑换码数量</th><th style="width:120px;">已使用数量</th><th style="width:90px;">状态</th></tr></thead>
+          <tbody>
+            <tr class="picker-row code-pool-row"><td><span class="fake-check"></span></td><td>18</td><td data-code-pool-name>30天数字绘画课程编码池</td><td>1000</td><td>990</td><td><span class="tick" style="font-size:18px;">开启</span></td></tr>
+            <tr class="picker-row code-pool-row"><td><span class="fake-check"></span></td><td>19</td><td data-code-pool-name>虚拟课程兑换项目编码池</td><td>500</td><td>186</td><td><span class="tick" style="font-size:18px;">开启</span></td></tr>
+            <tr class="picker-row code-pool-row"><td><span class="fake-check"></span></td><td>20</td><td data-code-pool-name>Software Premium Pack 兑换码池</td><td>300</td><td>82</td><td>关闭</td></tr>
+          </tbody>
+        </table>
+        <div class="inline-note">可多选编码池。确认后，所选编码池会绑定到当前商品行；发放时按该商品绑定的编码池领取未使用兑换码。</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn gray small" id="closeCodePoolPicker">取消</button>
+        <button class="btn blue small" id="confirmCodePoolPicker">确认选择</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const screenButtons = document.querySelectorAll("[data-screen-button]");
+    const screens = document.querySelectorAll("[data-screen]");
+    const crumbText = document.getElementById("crumbText");
+    const orderCrumbText = document.getElementById("orderCrumbText");
+    const topItems = document.querySelectorAll("[data-top-module]");
+    const modulePanels = document.querySelectorAll("[data-module-panel]");
+    const orderMenus = document.querySelectorAll("[data-order-menu]");
+    const screenNames = {
+      list: "商品列表管理",
+      create: "添加商品",
+      orderList: "订单列表",
+      orderDetail: "订单详情",
+      orderShipment: "发货单",
+      returnType: "退换货类型",
+      returnList: "退换货列表",
+      refundList: "退款列表",
+      orderProject: "合作项目",
+      orderCodePool: "编码池列表",
+      orderCodeGroupEdit: "编码创建页面",
+      orderProjectCreate: "创建合作项目"
+    };
+
+    function setScreen(name) {
+      screens.forEach(screen => screen.classList.toggle("active", screen.dataset.screen === name));
+      if (crumbText && (name === "list" || name === "create")) crumbText.textContent = screenNames[name] || "商品列表管理";
+      if (orderCrumbText && (name.startsWith("order") || name.startsWith("return") || name === "refundList")) orderCrumbText.textContent = screenNames[name] || "订单列表";
+      const activeOrderMenu = name === "orderProjectCreate" ? "orderProject" : (name === "orderCodeGroupEdit" ? "orderCodePool" : name);
+      orderMenus.forEach(item => item.classList.toggle("active", item.dataset.orderMenu === activeOrderMenu));
+      queueDraw();
+    }
+
+    function setTopModule(name) {
+      if (name !== "product" && name !== "order") {
+        showToast("该模块暂未在本原型中展开");
+        return;
+      }
+      topItems.forEach(item => item.classList.toggle("active", item.dataset.topModule === name));
+      modulePanels.forEach(panel => panel.classList.toggle("active", panel.dataset.modulePanel === name));
+      if (name === "product") {
+        setScreen("list");
+      } else if (name === "order") {
+        setScreen("orderList");
+      }
+      queueDraw();
+    }
+
+    topItems.forEach(item => item.addEventListener("click", () => setTopModule(item.dataset.topModule)));
+
+    const configTabs = document.querySelectorAll("[data-config-tab]");
+    const tabPanels = document.querySelectorAll("[data-tab-panel]");
+
+    function setConfigTab(name) {
+      configTabs.forEach(tab => tab.classList.toggle("active", tab.dataset.configTab === name));
+      tabPanels.forEach(panel => panel.classList.toggle("active", panel.dataset.tabPanel === name));
+      queueDraw();
+    }
+
+    configTabs.forEach(tab => tab.addEventListener("click", () => setConfigTab(tab.dataset.configTab)));
+
+    function fillProductEdit(btn) {
+      const values = {
+        name: btn.dataset.editName,
+        sku: btn.dataset.editSku,
+        code: btn.dataset.editCode,
+        price: btn.dataset.editPrice,
+        market: btn.dataset.editMarket
+      };
+      Object.entries(values).forEach(([key, value]) => {
+        const field = document.querySelector(`[data-edit-field="${key}"]`);
+        if (field && value) field.value = value;
+      });
+      const category = document.querySelector('[data-edit-field="category"]');
+      if (category && btn.dataset.editCategory) {
+        Array.from(category.options).forEach(option => {
+          option.selected = option.textContent.trim() === btn.dataset.editCategory;
+        });
+      }
+      const type = document.querySelector(`input[name="previewType"][value="${btn.dataset.editType || "normal"}"]`);
+      if (type) type.checked = true;
+      setConfigTab("info");
+      showToast("已进入商品编辑页并回填当前商品内容");
+    }
+
+    screenButtons.forEach(btn => btn.addEventListener("click", event => {
+      event.preventDefault();
+      if (btn.dataset.editName) fillProductEdit(btn);
+      setScreen(btn.dataset.screenButton);
+    }));
+
+    function showToast(text) {
+      const toast = document.getElementById("toast");
+      toast.textContent = text;
+      toast.classList.add("show");
+      window.setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    document.getElementById("searchBtn").addEventListener("click", () => showToast("已按虚拟商品条件刷新列表"));
+    document.getElementById("orderListSearchBtn").addEventListener("click", () => showToast("已按订单条件刷新列表"));
+    document.getElementById("orderListResetBtn").addEventListener("click", () => showToast("已重置订单筛选条件"));
+    document.getElementById("orderSearchBtn").addEventListener("click", () => showToast("已按合作项目条件刷新列表"));
+    document.getElementById("saveDraft").addEventListener("click", () => showToast("草稿已保存，待接口校验完成后可发布"));
+    document.getElementById("submitAudit").addEventListener("click", () => showToast("存在阻断项：课程接口未连接，暂不可发布"));
+    document.getElementById("projectSaveBtn").addEventListener("click", () => showToast("合作项目已保存，可继续维护编码与关联商品"));
+
+    const modal = document.getElementById("modal");
+    document.getElementById("previewDelivery").addEventListener("click", () => modal.classList.add("show"));
+    document.getElementById("closeModal").addEventListener("click", () => modal.classList.remove("show"));
+    modal.addEventListener("click", event => {
+      if (event.target === modal) modal.classList.remove("show");
+    });
+
+    const productPickerModal = document.getElementById("productPickerModal");
+    document.getElementById("openProductPicker").addEventListener("click", () => productPickerModal.classList.add("show"));
+    document.getElementById("closeProductPicker").addEventListener("click", () => productPickerModal.classList.remove("show"));
+    document.getElementById("confirmProductPicker").addEventListener("click", () => {
+      productPickerModal.classList.remove("show");
+      showToast("已添加至已选商品列表");
+    });
+    productPickerModal.querySelectorAll(".picker-row").forEach(row => {
+      row.addEventListener("click", () => row.classList.toggle("selected"));
+    });
+    productPickerModal.addEventListener("click", event => {
+      if (event.target === productPickerModal) productPickerModal.classList.remove("show");
+    });
+
+    const codePoolPickerModal = document.getElementById("codePoolPickerModal");
+    const closeCodePoolPicker = document.getElementById("closeCodePoolPicker");
+    const confirmCodePoolPicker = document.getElementById("confirmCodePoolPicker");
+    let activeCodePoolCell = null;
+
+    document.querySelectorAll("[data-open-code-pool]").forEach(button => {
+      button.addEventListener("click", () => {
+        activeCodePoolCell = button.closest("tr").querySelector("[data-code-pool-cell]");
+        document.querySelectorAll(".code-pool-row").forEach(row => row.classList.remove("selected"));
+        if (activeCodePoolCell) {
+          const currentNames = Array.from(activeCodePoolCell.querySelectorAll("label"))
+            .map(label => label.textContent.trim());
+          document.querySelectorAll(".code-pool-row").forEach(row => {
+            const name = row.querySelector("[data-code-pool-name]").textContent.trim();
+            row.classList.toggle("selected", currentNames.includes(name));
+          });
+        }
+        codePoolPickerModal.classList.add("show");
+      });
+    });
+
+    document.querySelectorAll(".code-pool-row").forEach(row => {
+      row.addEventListener("click", () => row.classList.toggle("selected"));
+    });
+
+    closeCodePoolPicker.addEventListener("click", () => codePoolPickerModal.classList.remove("show"));
+    confirmCodePoolPicker.addEventListener("click", () => {
+      const selectedNames = Array.from(document.querySelectorAll(".code-pool-row.selected [data-code-pool-name]"))
+        .map(cell => cell.textContent.trim());
+      if (!selectedNames.length) {
+        showToast("请至少选择一个编码池");
+        return;
+      }
+      if (activeCodePoolCell) {
+        activeCodePoolCell.innerHTML = selectedNames
+          .map(name => `<label><input type="checkbox" checked> ${name}</label>`)
+          .join("<br>");
+      }
+      codePoolPickerModal.classList.remove("show");
+      showToast("已绑定到当前商品");
+    });
+    codePoolPickerModal.addEventListener("click", event => {
+      if (event.target === codePoolPickerModal) codePoolPickerModal.classList.remove("show");
+    });
+
+    const svg = document.querySelector(".connector-layer");
+    const pane = document.querySelector(".prototype-pane");
+    const docs = document.querySelector(".prd-pane");
+    let activeId = null;
+    let drawTimer = null;
+
+    function clearActive() {
+      document.querySelectorAll(".linked-active[data-node], .doc-card.linked-active").forEach(el => el.classList.remove("linked-active"));
+      document.querySelectorAll(".connector.active").forEach(el => el.classList.remove("active"));
+    }
+
+    function setActive(id) {
+      activeId = id;
+      clearActive();
+      document.querySelectorAll(`[data-node="${id}"]`).forEach(el => el.classList.add("linked-active"));
+      document.querySelectorAll(`[data-doc="${id}"]`).forEach(el => el.classList.add("linked-active"));
+      document.querySelectorAll(`[data-link="${id}"]`).forEach(el => el.classList.add("active"));
+    }
+
+    function queueDraw() {
+      window.clearTimeout(drawTimer);
+      drawTimer = window.setTimeout(drawConnectors, 40);
+    }
+
+    function drawConnectors() {
+      if (!svg || !docs) return;
+      svg.innerHTML = "";
+      if (window.innerWidth <= 1320) return;
+      document.querySelectorAll("[data-node]").forEach(node => {
+        const id = node.dataset.node;
+        const doc = document.querySelector(`[data-doc="${id}"]`);
+        if (!doc) return;
+        const nr = node.getBoundingClientRect();
+        const dr = doc.getBoundingClientRect();
+        if (nr.bottom < 0 || nr.top > window.innerHeight || dr.bottom < 0 || dr.top > window.innerHeight) return;
+        const x1 = nr.right;
+        const y1 = nr.top + nr.height / 2;
+        const x2 = dr.left;
+        const y2 = dr.top + Math.min(64, dr.height / 2);
+        const mid = x1 + Math.max(80, (x2 - x1) * .45);
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", `M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`);
+        path.setAttribute("class", `connector${activeId === id ? " active" : ""}`);
+        path.setAttribute("data-link", id);
+        svg.appendChild(path);
+      });
+      if (activeId) setActive(activeId);
+    }
+
+    document.querySelectorAll("[data-node]").forEach(node => {
+      node.addEventListener("mouseenter", () => setActive(node.dataset.node));
+      node.addEventListener("focusin", () => setActive(node.dataset.node));
+    });
+
+    document.querySelectorAll("[data-doc]").forEach(doc => {
+      doc.addEventListener("mouseenter", () => setActive(doc.dataset.doc));
+      doc.addEventListener("focus", () => setActive(doc.dataset.doc));
+    });
+
+    document.addEventListener("mouseleave", event => {
+      if (event.target && event.target.matches && (event.target.matches("[data-node]") || event.target.matches("[data-doc]"))) {
+        activeId = null;
+        clearActive();
+      }
+    }, true);
+
+    [window, pane, docs].filter(Boolean).forEach(target => {
+      target.addEventListener("resize", queueDraw);
+      target.addEventListener("scroll", queueDraw, { passive: true });
+    });
+
+    window.addEventListener("load", drawConnectors);
+    setScreen("list");
+  </script>
+</body>
+</html>
